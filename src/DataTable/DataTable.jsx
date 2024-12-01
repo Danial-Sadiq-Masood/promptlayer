@@ -39,6 +39,8 @@ import {
     TableRow,
 } from "@/components/ui/table"
 
+import Markdown from 'react-markdown'
+
 import tblData from './test.json'
 
 console.log(tblData);
@@ -78,23 +80,31 @@ export const columns = [
         id: "conversation",
         header: ({ column }) => <ColumnHeader column={column} title="Conversation" />,
         cell: ({ row }) => (
-        <div>
-            <NewlineText text={row.getValue('conversation')}/>
-        </div>),
+            <div>
+                <NewlineText text={row.getValue('conversation')} />
+            </div>),
         enableSorting: true
     },
     {
         accessorKey: "summary-1",
         id: "summary-1",
         header: ({ column }) => <ColumnHeader column={column} title="Summary 1" />,
-        cell: ({ row }) => <div className="capitalize">{row.getValue("summary-1")}</div>,
+        cell: ({ row }) => (
+            <div>
+                <Markdown>{row.getValue("summary-1")}</Markdown>
+            </div>
+        ),
         enableSorting: true
     },
     {
         accessorKey: "summary-2",
         id: "summary-2",
         header: ({ column }) => <ColumnHeader column={column} title="Summary 2" />,
-        cell: ({ row }) => <div className="capitalize">{row.getValue("summary-2")}</div>,
+        cell: ({ row }) => (
+            <div>
+                <Markdown>{row.getValue("summary-2")}</Markdown>
+            </div>
+        ),
         enableSorting: true
     },
     {
@@ -148,7 +158,7 @@ export default function DataTableDemo() {
                     className="max-w-sm"
                 />
             </div>*/}
-            <div className="rounded-md border">
+            <div className="rounded-md border max-w-[100%]">
                 <Table>
                     <TableHeader className="bg-gray-50">
                         {table.getHeaderGroups().map((headerGroup) => (
@@ -156,7 +166,7 @@ export default function DataTableDemo() {
                                 {headerGroup.headers.map((header) => {
                                     const minSize = header.getSize() || 20;
                                     return (
-                                        <TableHead key={header.id} className="max-w-[50%] min-w-[10px]" stylekey={header.id}>
+                                        <TableHead key={header.id} className="min-w-[500px]" stylekey={header.id}>
                                             {header.isPlaceholder
                                                 ? null
                                                 : flexRender(
