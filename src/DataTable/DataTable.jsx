@@ -1,6 +1,8 @@
 "use client"
 
 import * as React from "react"
+import { useState } from "react"
+
 import {
     CaretSortIcon,
     ChevronDownIcon,
@@ -19,6 +21,7 @@ import Paginator from './table-components/paginator'
 import ColumnHeader from './table-components/columnHeader'
 
 import { Button } from "@/components/ui/button"
+import { ChevronRight, ChevronDown } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
     DropdownMenu,
@@ -60,19 +63,37 @@ function NewlineText({ text }) {
 
 export const columns = [
     {
+        accessorKey: "expand",
+        header: "",
+        id: "expand",
+        cell: ({ row }) => (
+            <div >
+                <Button onClick={row.getToggleExpandedHandler()} variant="outline" size="icon">
+                    {row.getIsExpanded() ? <ChevronDown />   : <ChevronRight />  }
+                </Button>
+            </div>
+        ),
+        minSize: 20,
+        enableSorting: true,
+
+    },
+    {
         accessorKey: "User_A_Name",
         header: ({ column }) => <ColumnHeader column={column} title="User A Name" />,
         id: "User_A_Name",
         cell: ({ row }) => (
             <div className="capitalize">{row.getValue("User_A_Name")}</div>
         ),
-        enableSorting: true
+        minSize: 120,
+        enableSorting: true,
+
     },
     {
         accessorKey: "User_B_Name",
         id: "User_B_Name",
         header: ({ column }) => <ColumnHeader column={column} title="User B Name" />,
         cell: ({ row }) => <div className="capitalize">{row.getValue("User_B_Name")}</div>,
+        minSize: 120,
         enableSorting: true
     },
     {
@@ -82,7 +103,9 @@ export const columns = [
         cell: ({ row }) => (
             <div>
                 <NewlineText text={row.getValue('conversation')} />
-            </div>),
+            </div>
+        ),
+        minSize: 600,
         enableSorting: true
     },
     {
@@ -94,6 +117,7 @@ export const columns = [
                 <Markdown>{row.getValue("summary-1")}</Markdown>
             </div>
         ),
+        minSize: 600,
         enableSorting: true
     },
     {
@@ -105,6 +129,7 @@ export const columns = [
                 <Markdown>{row.getValue("summary-2")}</Markdown>
             </div>
         ),
+        minSize: 600,
         enableSorting: true
     },
     {
@@ -114,6 +139,7 @@ export const columns = [
         cell: ({ row }) => (
             <div className="capitalize"></div>
         ),
+        minSize: 200,
         enableSorting: true
     }
 ]
@@ -127,6 +153,8 @@ export default function DataTableDemo() {
         React.useState({})
     const [rowSelection, setRowSelection] = React.useState({})
 
+    const [expanded, setExpanded] = useState({})
+
     const table = useReactTable({
         data: tblData,
         columns,
@@ -138,12 +166,15 @@ export default function DataTableDemo() {
         getFilteredRowModel: getFilteredRowModel(),
         onColumnVisibilityChange: setColumnVisibility,
         onRowSelectionChange: setRowSelection,
+        getRowCanExpand: (row) => true,
         state: {
             sorting,
             columnFilters,
             columnVisibility,
             rowSelection,
-        }
+            expanded
+        },
+        onExpandedChange: setExpanded
     })
 
     return (
@@ -164,9 +195,10 @@ export default function DataTableDemo() {
                         {table.getHeaderGroups().map((headerGroup) => (
                             <TableRow key={headerGroup.id}>
                                 {headerGroup.headers.map((header) => {
-                                    const minSize = header.getSize() || 20;
+                                    const minSize = header.getSize();
+                                    console.log(minSize)
                                     return (
-                                        <TableHead key={header.id} className="min-w-[500px]" stylekey={header.id}>
+                                        <TableHead key={header.id} style={{ minWidth: minSize }}>
                                             {header.isPlaceholder
                                                 ? null
                                                 : flexRender(
@@ -181,21 +213,35 @@ export default function DataTableDemo() {
                     </TableHeader>
                     <TableBody>
                         {table?.getRowModel()?.rows?.length ? (
-                            table?.getRowModel().rows.map((row) => (
-                                <TableRow
-                                    key={row.id}
-                                    data-state={row.getIsSelected() && "selected"}
-                                >
-                                    {row.getVisibleCells().map((cell) => (
-                                        <TableCell className="max-w-[500px] align-top" key={cell.id}>
-                                            {flexRender(
-                                                cell.column.columnDef.cell,
-                                                cell.getContext()
-                                            )}
-                                        </TableCell>
-                                    ))}
-                                </TableRow>
-                            ))
+                            table?.getRowModel().rows.map((row) => {
+                                console.log(row, row.getIsExpanded())
+                                return (
+                                    <TableRow
+                                        key={row.id}
+                                        data-state={row.getIsSelected() && "selected"}
+                                    >
+                                        {row.getVisibleCells().map((cell) => (
+                                            <TableCell className="align-top" key={cell.id}>
+                                                {
+                                                    !row.getIsExpanded()
+                                                        ?
+                                                        (<div className="max-h-[200px] overflow-hidden">
+                                                            {flexRender(
+                                                                cell.column.columnDef.cell,
+                                                                cell.getContext()
+                                                            )}
+                                                        </div>)
+                                                        :
+                                                        flexRender(
+                                                            cell.column.columnDef.cell,
+                                                            cell.getContext()
+                                                        )
+                                                }
+                                            </TableCell>
+                                        ))}
+                                    </TableRow>
+                                )
+                            })
                         ) : (
                             <TableRow>
                                 <TableCell
