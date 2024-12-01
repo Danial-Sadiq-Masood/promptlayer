@@ -20,7 +20,7 @@ export default function FileExport({ rows }) {
 
     return (
         <>
-            <Button className="bg-blue-600" onClick={exportExcel}>
+            <Button className="bg-blue-600 hover:bg-blue-800" onClick={exportExcel}>
                 <LucideDownload /> Download
             </Button>
         </>
