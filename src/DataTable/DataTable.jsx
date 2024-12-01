@@ -28,6 +28,7 @@ import {
 
 import Paginator from './table-components/paginator'
 import ColumnHeader from './table-components/columnHeader'
+import DataTableViewOptions from './table-components/dataTableViewOptions'
 
 import { Button } from "@/components/ui/button"
 import { ChevronRight, ChevronDown, LucideUpload, LucideDownload } from "lucide-react"
@@ -253,7 +254,7 @@ export default function DataTableDemo() {
                     ),
                     size: 50,
                     enableSorting: true,
-
+                    enableHiding: false,
                 },
                 {
                     accessorKey: "User_A_Name",
@@ -397,6 +398,11 @@ export default function DataTableDemo() {
                     <FileUpload setLoadedTable={setLoadedTable} setData={setData} />
                 </div>
                 <div className="flex items-center space-x-2">
+                    {
+                        loadedTable
+                        &&
+                        <DataTableViewOptions table={table}/>
+                    }
                     <FileExport rows={table.getCoreRowModel().rows} />
                 </div>
             </div>
