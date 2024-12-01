@@ -5,7 +5,7 @@ import { useState, useRef } from "react"
 
 import * as csv2json from "csvjson-csv2json";
 
-import markDownstyles from './markdown.module.css' 
+import markDownstyles from './markdown.module.css'
 
 console.log(markDownstyles)
 
@@ -69,7 +69,7 @@ function NewlineText({ text = '' }) {
     );
 }
 
-export const columns = [
+const columns = [
     {
         accessorKey: "expand",
         header: "",
@@ -211,6 +211,127 @@ export default function DataTableDemo() {
 
     const [data, setData] = useState([])
 
+    const [loadedTable, setLoadedTable] = useState(false); 
+
+    const columns = React.useMemo(
+        () => {
+            if (!loadedTable) {
+                return [];
+            }
+
+            console.log(data,'cols data')
+            const columnNames = Object.keys(data[0])
+
+            const markdownColumns = columnNames
+                .filter(d => d.includes('summary'))
+                .map((d,i) => ({
+                    accessorKey: d,
+                    id: d,
+                    header: ({ column }) => <ColumnHeader column={column} title={`Summary ${i + 1}`} />,
+                    cell: ({ row }) => (
+                        <div className={markDownstyles.markdown}>
+                            <Markdown>{row.getValue(d)}</Markdown>
+                        </div>
+                    ),
+                    size: 600,
+                    enableSorting: true
+                }))
+
+                console.log(markdownColumns, 'mdcols')
+
+            return [
+                {
+                    accessorKey: "expand",
+                    header: "",
+                    id: "expand",
+                    cell: ({ row }) => (
+                        <div >
+                            <Button onClick={row.getToggleExpandedHandler()} variant="outline" size="icon">
+                                {row.getIsExpanded() ? <ChevronDown /> : <ChevronRight />}
+                            </Button>
+                        </div>
+                    ),
+                    size: 50,
+                    enableSorting: true,
+
+                },
+                {
+                    accessorKey: "User_A_Name",
+                    header: ({ column }) => <ColumnHeader column={column} title="User A Name" />,
+                    id: "User_A_Name",
+                    cell: ({ row }) => (
+                        <div className="capitalize">{row.getValue("User_A_Name")}</div>
+                    ),
+                    size: 120,
+                    enableSorting: true,
+
+                },
+                {
+                    accessorKey: "User_B_Name",
+                    id: "User_B_Name",
+                    header: ({ column }) => <ColumnHeader column={column} title="User B Name" />,
+                    cell: ({ row }) => <div className="capitalize">{row.getValue("User_B_Name")}</div>,
+                    size: 120,
+                    enableSorting: true
+                },
+                {
+                    accessorKey: "conversation",
+                    id: "conversation",
+                    header: ({ column }) => <ColumnHeader column={column} title="Conversation" />,
+                    cell: ({ row }) => (
+                        <div>
+                            <NewlineText text={row.getValue('conversation')} />
+                        </div>
+                    ),
+                    size: 600,
+                    enableSorting: true
+                },
+                ...markdownColumns,
+                ,
+                {
+                    accessorKey: "ranking",
+                    header: ({ column }) => <ColumnHeader column={column} title="Ranking" />,
+                    id: "ranking",
+                    cell: ({ row, column, table }) => {
+                        console.log(row.getValue("ranking"));
+                        const ranking = row.getValue("ranking");
+
+                        console.log(row, column, table)
+
+                        function onChange(e) {
+                            console.log('changed');
+                            console.log(e);
+
+                            table.options.meta.updateData(row.index, column.id, e)
+                        }
+
+                        return (
+                            <div>
+                                <RadioGroup value={ranking} onValueChange={onChange}>
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="Summary 1" />
+                                        <Label htmlFor="r1">Summary 1</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="Summary 2" />
+                                        <Label htmlFor="r2">Summary 2</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="No Difference" />
+                                        <Label htmlFor="r3">No Difference</Label>
+                                    </div>
+                                </RadioGroup>
+                            </div>
+                        )
+                    },
+                    size: 200,
+                    enableSorting: true
+                }
+            ]
+        },
+        [loadedTable]
+    )
+
     const [autoResetPageIndex, skipAutoResetPageIndex] = useSkipper()
 
     const table = useReactTable({
@@ -273,7 +394,7 @@ export default function DataTableDemo() {
             </div>*/}
             <div className="flex items-center justify-between py-4">
                 <div className="flex flex-1 items-center space-x-2">
-                    <FileUpload setData={setData} />
+                    <FileUpload setLoadedTable={setLoadedTable} setData={setData} />
                 </div>
                 <div className="flex items-center space-x-2">
                     <FileExport rows={table.getCoreRowModel().rows} />
@@ -282,20 +403,23 @@ export default function DataTableDemo() {
             <div className="rounded-md border max-w-[100%]">
                 {
                     data.length > 0
-                    ?
-                    <DataTable table={table}/>
-                    :
-                    <p className="p-10 text-gray-700">No Data Uploaded</p>
+                        ?
+                        <DataTable table={table} />
+                        :
+                        <p className="p-10 text-gray-700">No Data Uploaded</p>
                 }
             </div>
-            <div className="flex items-center justify-end space-x-2 py-4">
-                <Paginator table={table} />
-            </div>
+            {data.length > 0
+                &&
+                <div className="flex items-center justify-end space-x-2 py-4">
+                    <Paginator table={table} />
+                </div>
+            }
         </div>
     )
 }
 
-function DataTable({table}){
+function DataTable({ table }) {
     return (
         <Table>
             <TableHeader className="bg-gray-50">
@@ -364,7 +488,7 @@ function DataTable({table}){
     )
 }
 
-function FileUpload({ setData }) {
+function FileUpload({ setData, setLoadedTable }) {
 
     const inputRef = useRef(null);
 
@@ -388,6 +512,7 @@ function FileUpload({ setData }) {
             a = a.map(d => ({ ...d, 'ranking': 'No Difference' }))
             console.log(a);
             setData(a);
+            setLoadedTable(true)
         };
     }
 
