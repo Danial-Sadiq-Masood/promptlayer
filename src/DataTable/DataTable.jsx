@@ -5,6 +5,10 @@ import { useState, useRef } from "react"
 
 import * as csv2json from "csvjson-csv2json";
 
+import markDownstyles from './markdown.module.css' 
+
+console.log(markDownstyles)
+
 import { mkConfig, generateCsv, download } from 'export-to-csv'
 
 
@@ -54,7 +58,7 @@ import Markdown from 'react-markdown'
 
 function NewlineText({ text = '' }) {
     return (
-        <div>
+        <div className="leading-7">
             {text.split('\n').map((line, index) => (
                 <span key={index}>
                     {line}
@@ -117,7 +121,7 @@ export const columns = [
         id: "summary-1",
         header: ({ column }) => <ColumnHeader column={column} title="Summary 1" />,
         cell: ({ row }) => (
-            <div>
+            <div className={markDownstyles.markdown}>
                 <Markdown>{row.getValue("summary-1")}</Markdown>
             </div>
         ),
@@ -129,7 +133,7 @@ export const columns = [
         id: "summary-2",
         header: ({ column }) => <ColumnHeader column={column} title="Summary 2" />,
         cell: ({ row }) => (
-            <div>
+            <div className={markDownstyles.markdown}>
                 <Markdown>{row.getValue("summary-2")}</Markdown>
             </div>
         ),
@@ -276,75 +280,87 @@ export default function DataTableDemo() {
                 </div>
             </div>
             <div className="rounded-md border max-w-[100%]">
-                <Table>
-                    <TableHeader className="bg-gray-50">
-                        {table.getHeaderGroups().map((headerGroup) => (
-                            <TableRow key={headerGroup.id}>
-                                {headerGroup.headers.map((header) => {
-                                    const minSize = header.getSize();
-                                    console.log(minSize)
-                                    return (
-                                        <TableHead key={header.id} style={{ minWidth: minSize }}>
-                                            {header.isPlaceholder
-                                                ? null
-                                                : flexRender(
-                                                    header.column.columnDef.header,
-                                                    header.getContext()
-                                                )}
-                                        </TableHead>
-                                    )
-                                })}
-                            </TableRow>
-                        ))}
-                    </TableHeader>
-                    <TableBody>
-                        {table?.getRowModel()?.rows?.length ? (
-                            table?.getRowModel().rows.map((row) => {
-                                console.log(row, row.getIsExpanded())
-                                return (
-                                    <TableRow
-                                        key={row.id}
-                                        data-state={row.getIsSelected() && "selected"}
-                                    >
-                                        {row.getVisibleCells().map((cell) => (
-                                            <TableCell className="align-top" key={cell.id}>
-                                                {
-                                                    !row.getIsExpanded()
-                                                        ?
-                                                        (<div className="max-h-[200px] overflow-hidden">
-                                                            {flexRender(
-                                                                cell.column.columnDef.cell,
-                                                                cell.getContext()
-                                                            )}
-                                                        </div>)
-                                                        :
-                                                        flexRender(
-                                                            cell.column.columnDef.cell,
-                                                            cell.getContext()
-                                                        )
-                                                }
-                                            </TableCell>
-                                        ))}
-                                    </TableRow>
-                                )
-                            })
-                        ) : (
-                            <TableRow>
-                                <TableCell
-                                    colSpan={columns.length}
-                                    className="h-24 text-center"
-                                >
-                                    No results.
-                                </TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
+                {
+                    data.length > 0
+                    ?
+                    <DataTable table={table}/>
+                    :
+                    <p className="p-10 text-gray-700">No Data Uploaded</p>
+                }
             </div>
             <div className="flex items-center justify-end space-x-2 py-4">
                 <Paginator table={table} />
             </div>
         </div>
+    )
+}
+
+function DataTable({table}){
+    return (
+        <Table>
+            <TableHeader className="bg-gray-50">
+                {table.getHeaderGroups().map((headerGroup) => (
+                    <TableRow key={headerGroup.id}>
+                        {headerGroup.headers.map((header) => {
+                            const minSize = header.getSize();
+                            console.log(minSize)
+                            return (
+                                <TableHead key={header.id} style={{ minWidth: minSize }}>
+                                    {header.isPlaceholder
+                                        ? null
+                                        : flexRender(
+                                            header.column.columnDef.header,
+                                            header.getContext()
+                                        )}
+                                </TableHead>
+                            )
+                        })}
+                    </TableRow>
+                ))}
+            </TableHeader>
+            <TableBody>
+                {table?.getRowModel()?.rows?.length ? (
+                    table?.getRowModel().rows.map((row) => {
+                        console.log(row, row.getIsExpanded())
+                        return (
+                            <TableRow
+                                key={row.id}
+                                data-state={row.getIsSelected() && "selected"}
+                            >
+                                {row.getVisibleCells().map((cell) => (
+                                    <TableCell className="align-top" key={cell.id}>
+                                        {
+                                            !row.getIsExpanded()
+                                                ?
+                                                (<div className="max-h-[200px] overflow-hidden">
+                                                    {flexRender(
+                                                        cell.column.columnDef.cell,
+                                                        cell.getContext()
+                                                    )}
+                                                </div>)
+                                                :
+                                                flexRender(
+                                                    cell.column.columnDef.cell,
+                                                    cell.getContext()
+                                                )
+                                        }
+                                    </TableCell>
+                                ))}
+                            </TableRow>
+                        )
+                    })
+                ) : (
+                    <TableRow>
+                        <TableCell
+                            colSpan={columns.length}
+                            className="h-24 text-center"
+                        >
+                            No results.
+                        </TableCell>
+                    </TableRow>
+                )}
+            </TableBody>
+        </Table>
     )
 }
 
