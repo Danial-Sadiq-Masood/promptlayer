@@ -1,22 +1,10 @@
 "use client"
 
 import * as React from "react"
-import { useState, useRef } from "react"
-
-import * as csv2json from "csvjson-csv2json";
+import { useState } from "react"
 
 import markDownstyles from './markdown.module.css'
 
-console.log(markDownstyles)
-
-import { mkConfig, generateCsv, download } from 'export-to-csv'
-
-
-import {
-    CaretSortIcon,
-    ChevronDownIcon,
-    DotsHorizontalIcon,
-} from "@radix-ui/react-icons"
 import {
     getCoreRowModel,
     getSortedRowModel,
@@ -29,23 +17,14 @@ import {
 import Paginator from './table-components/paginator'
 import ColumnHeader from './table-components/columnHeader'
 import DataTableViewOptions from './table-components/dataTableViewOptions'
+import FileUpload from './table-components/FileUpload'
+import FileExport from './table-components/FileExport'
 
 import { Button } from "@/components/ui/button"
-import { ChevronRight, ChevronDown, LucideUpload, LucideDownload } from "lucide-react"
+import { ChevronRight, ChevronDown } from "lucide-react"
 
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-
-import {
-    DropdownMenu,
-    DropdownMenuCheckboxItem,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
 import {
     Table,
     TableBody,
@@ -70,118 +49,6 @@ function NewlineText({ text = '' }) {
     );
 }
 
-const columns = [
-    {
-        accessorKey: "expand",
-        header: "",
-        id: "expand",
-        cell: ({ row }) => (
-            <div >
-                <Button onClick={row.getToggleExpandedHandler()} variant="outline" size="icon">
-                    {row.getIsExpanded() ? <ChevronDown /> : <ChevronRight />}
-                </Button>
-            </div>
-        ),
-        size: 50,
-        enableSorting: true,
-
-    },
-    {
-        accessorKey: "User_A_Name",
-        header: ({ column }) => <ColumnHeader column={column} title="User A Name" />,
-        id: "User_A_Name",
-        cell: ({ row }) => (
-            <div className="capitalize">{row.getValue("User_A_Name")}</div>
-        ),
-        size: 120,
-        enableSorting: true,
-
-    },
-    {
-        accessorKey: "User_B_Name",
-        id: "User_B_Name",
-        header: ({ column }) => <ColumnHeader column={column} title="User B Name" />,
-        cell: ({ row }) => <div className="capitalize">{row.getValue("User_B_Name")}</div>,
-        size: 120,
-        enableSorting: true
-    },
-    {
-        accessorKey: "conversation",
-        id: "conversation",
-        header: ({ column }) => <ColumnHeader column={column} title="Conversation" />,
-        cell: ({ row }) => (
-            <div>
-                <NewlineText text={row.getValue('conversation')} />
-            </div>
-        ),
-        size: 600,
-        enableSorting: true
-    },
-    {
-        accessorKey: "summary-1",
-        id: "summary-1",
-        header: ({ column }) => <ColumnHeader column={column} title="Summary 1" />,
-        cell: ({ row }) => (
-            <div className={markDownstyles.markdown}>
-                <Markdown>{row.getValue("summary-1")}</Markdown>
-            </div>
-        ),
-        size: 600,
-        enableSorting: true
-    },
-    {
-        accessorKey: "summary-2",
-        id: "summary-2",
-        header: ({ column }) => <ColumnHeader column={column} title="Summary 2" />,
-        cell: ({ row }) => (
-            <div className={markDownstyles.markdown}>
-                <Markdown>{row.getValue("summary-2")}</Markdown>
-            </div>
-        ),
-        size: 600,
-        enableSorting: true
-    },
-    {
-        accessorKey: "ranking",
-        header: ({ column }) => <ColumnHeader column={column} title="Ranking" />,
-        id: "ranking",
-        cell: ({ row, column, table }) => {
-            console.log(row.getValue("ranking"));
-            const ranking = row.getValue("ranking");
-
-            console.log(row, column, table)
-
-            function onChange(e) {
-                console.log('changed');
-                console.log(e);
-
-                table.options.meta.updateData(row.index, column.id, e)
-            }
-
-            return (
-                <div>
-                    <RadioGroup value={ranking} onValueChange={onChange}>
-                        <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="Summary 1" />
-                            <Label htmlFor="r1">Summary 1</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="Summary 2" />
-                            <Label htmlFor="r2">Summary 2</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="No Difference" />
-                            <Label htmlFor="r3">No Difference</Label>
-                        </div>
-                    </RadioGroup>
-                </div>
-            )
-        },
-        size: 200,
-        enableSorting: true
-    }
-]
-
 function useSkipper() {
     const shouldSkipRef = React.useRef(true)
     const shouldSkip = shouldSkipRef.current
@@ -198,6 +65,50 @@ function useSkipper() {
     return [shouldSkip, skip]
 }
 
+const getTHPinningStyles = (column) => {
+    const isPinned = column.getIsPinned()
+    const isLastLeftPinnedColumn =
+        isPinned === 'left' && column.getIsLastColumn('left')
+    const isFirstRightPinnedColumn =
+        isPinned === 'right' && column.getIsFirstColumn('right')
+
+    return {
+        boxShadow: isLastLeftPinnedColumn
+            ? '-2px 0 2px -2px gray inset'
+            : isFirstRightPinnedColumn
+                ? '2px 0 2px -2px gray inset'
+                : undefined,
+        left: isPinned === 'left' ? `${column.getStart('left')}px` : undefined,
+        right: isPinned === 'right' ? `${column.getAfter('right')}px` : undefined,
+        position: isPinned ? 'sticky' : 'relative',
+        width: column.getSize(),
+        backgroundColor : isPinned ? '#f9fafb' : undefined,
+        zIndex: isPinned ? 1 : 0,
+    }
+}
+
+const getTDPinningStyles = (column) => {
+    const isPinned = column.getIsPinned()
+    const isLastLeftPinnedColumn =
+        isPinned === 'left' && column.getIsLastColumn('left')
+    const isFirstRightPinnedColumn =
+        isPinned === 'right' && column.getIsFirstColumn('right')
+
+    return {
+        boxShadow: isLastLeftPinnedColumn
+            ? '-2px 0 2px -2px gray inset'
+            : isFirstRightPinnedColumn
+                ? '2px 0 2px -2px gray inset'
+                : undefined,
+        left: isPinned === 'left' ? `${column.getStart('left')}px` : undefined,
+        right: isPinned === 'right' ? `${column.getAfter('right')}px` : undefined,
+        position: isPinned ? 'sticky' : 'relative',
+        width: column.getSize(),
+        opacity: isPinned ? 0.95 : 1,
+        backgroundColor : isPinned ? 'white' : undefined,
+        zIndex: isPinned ? 1 : 0,
+    }
+}
 
 export default function DataTableDemo() {
     const [sorting, setSorting] = React.useState([])
@@ -212,7 +123,7 @@ export default function DataTableDemo() {
 
     const [data, setData] = useState([])
 
-    const [loadedTable, setLoadedTable] = useState(false); 
+    const [loadedTable, setLoadedTable] = useState(false);
 
     const columns = React.useMemo(
         () => {
@@ -220,12 +131,11 @@ export default function DataTableDemo() {
                 return [];
             }
 
-            console.log(data,'cols data')
             const columnNames = Object.keys(data[0])
 
             const markdownColumns = columnNames
                 .filter(d => d.includes('summary'))
-                .map((d,i) => ({
+                .map((d, i) => ({
                     accessorKey: d,
                     id: d,
                     header: ({ column }) => <ColumnHeader column={column} title={`Summary ${i + 1}`} />,
@@ -235,10 +145,8 @@ export default function DataTableDemo() {
                         </div>
                     ),
                     size: 600,
-                    enableSorting: true
+                    enableSorting: false
                 }))
-
-                console.log(markdownColumns, 'mdcols')
 
             return [
                 {
@@ -253,7 +161,7 @@ export default function DataTableDemo() {
                         </div>
                     ),
                     size: 50,
-                    enableSorting: true,
+                    enableSorting: false,
                     enableHiding: false,
                 },
                 {
@@ -264,7 +172,7 @@ export default function DataTableDemo() {
                         <div className="capitalize">{row.getValue("User_A_Name")}</div>
                     ),
                     size: 120,
-                    enableSorting: true,
+                    enableSorting: false,
 
                 },
                 {
@@ -273,7 +181,7 @@ export default function DataTableDemo() {
                     header: ({ column }) => <ColumnHeader column={column} title="User B Name" />,
                     cell: ({ row }) => <div className="capitalize">{row.getValue("User_B_Name")}</div>,
                     size: 120,
-                    enableSorting: true
+                    enableSorting: false
                 },
                 {
                     accessorKey: "conversation",
@@ -285,7 +193,7 @@ export default function DataTableDemo() {
                         </div>
                     ),
                     size: 600,
-                    enableSorting: true
+                    enableSorting: false
                 },
                 ...markdownColumns,
                 ,
@@ -294,15 +202,9 @@ export default function DataTableDemo() {
                     header: ({ column }) => <ColumnHeader column={column} title="Ranking" />,
                     id: "ranking",
                     cell: ({ row, column, table }) => {
-                        console.log(row.getValue("ranking"));
                         const ranking = row.getValue("ranking");
 
-                        console.log(row, column, table)
-
                         function onChange(e) {
-                            console.log('changed');
-                            console.log(e);
-
                             table.options.meta.updateData(row.index, column.id, e)
                         }
 
@@ -326,7 +228,7 @@ export default function DataTableDemo() {
                         )
                     },
                     size: 200,
-                    enableSorting: true
+                    enableSorting: false
                 }
             ]
         },
@@ -334,6 +236,11 @@ export default function DataTableDemo() {
     )
 
     const [autoResetPageIndex, skipAutoResetPageIndex] = useSkipper()
+
+    const [columnPinning, setColumnPinning] = useState({
+        left: [],
+        right: [],
+    });
 
     const table = useReactTable({
         data,
@@ -351,6 +258,9 @@ export default function DataTableDemo() {
         initialState: {
             pagination: {
                 pageSize: 3,
+            },
+            columnPinning: {
+                left: ['expand']
             }
         },
         state: {
@@ -383,16 +293,6 @@ export default function DataTableDemo() {
 
     return (
         <div className="w-full">
-            {/*<div className="flex items-center py-4">
-                <Input
-                    placeholder="Filter Polling Stations By Name..."
-                    value={(table.getColumn("ps")?.getFilterValue()) ?? ""}
-                    onChange={(event) =>
-                        table.getColumn("ps")?.setFilterValue(event.target.value)
-                    }
-                    className="max-w-sm"
-                />
-            </div>*/}
             <div className="flex items-center justify-between py-4">
                 <div className="flex flex-1 items-center space-x-2">
                     <FileUpload setLoadedTable={setLoadedTable} setData={setData} />
@@ -401,9 +301,11 @@ export default function DataTableDemo() {
                     {
                         loadedTable
                         &&
-                        <DataTableViewOptions table={table}/>
+                        <>
+                            <DataTableViewOptions table={table} />
+                            <FileExport rows={table.getCoreRowModel().rows} />
+                        </>
                     }
-                    <FileExport rows={table.getCoreRowModel().rows} />
                 </div>
             </div>
             <div className="rounded-md border max-w-[100%]">
@@ -432,10 +334,11 @@ function DataTable({ table }) {
                 {table.getHeaderGroups().map((headerGroup) => (
                     <TableRow key={headerGroup.id}>
                         {headerGroup.headers.map((header) => {
+
+                            const { column } = header;
                             const minSize = header.getSize();
-                            console.log(minSize)
                             return (
-                                <TableHead key={header.id} style={{ minWidth: minSize }}>
+                                <TableHead key={header.id} style={{ minWidth: minSize,...getTHPinningStyles(column) }} >
                                     {header.isPlaceholder
                                         ? null
                                         : flexRender(
@@ -451,14 +354,13 @@ function DataTable({ table }) {
             <TableBody>
                 {table?.getRowModel()?.rows?.length ? (
                     table?.getRowModel().rows.map((row) => {
-                        console.log(row, row.getIsExpanded())
                         return (
                             <TableRow
                                 key={row.id}
                                 data-state={row.getIsSelected() && "selected"}
                             >
                                 {row.getVisibleCells().map((cell) => (
-                                    <TableCell className="align-top" key={cell.id}>
+                                    <TableCell className="align-top" key={cell.id} style={{...getTDPinningStyles(cell.column)}}>
                                         {
                                             !row.getIsExpanded()
                                                 ?
@@ -491,73 +393,5 @@ function DataTable({ table }) {
                 )}
             </TableBody>
         </Table>
-    )
-}
-
-function FileUpload({ setData, setLoadedTable }) {
-
-    const inputRef = useRef(null);
-
-    function handleFileUpload(e) {
-        const files = e.target.files;
-        if (!files) return;
-
-        const file = files[0];
-        const reader = new FileReader();
-
-        // use the file
-        console.log(file);
-
-        reader.readAsText(file);
-
-        reader.onload = (e) => {
-            const text = e.target.result;
-
-            var a = csv2json.csv2json(text);
-
-            a = a.map(d => ({ ...d, 'ranking': 'No Difference' }))
-            console.log(a);
-            setData(a);
-            setLoadedTable(true)
-        };
-    }
-
-    function handleButtonClick(e) {
-        e.preventDefault();
-        if (!inputRef || !inputRef.current) return;
-
-        inputRef.current.click();
-    }
-
-    return (
-        <>
-            <Button onClick={handleButtonClick}>
-                <LucideUpload /> Upload
-            </Button>
-            <input ref={inputRef} type={"file"} hidden accept={".csv"} onChange={handleFileUpload} />
-        </>
-    )
-}
-
-function FileExport({ rows }) {
-    const csvConfig = mkConfig({
-        fieldSeparator: ',',
-        filename: 'sample',
-        decimalSeparator: '.',
-        useKeysAsHeaders: true,
-    })
-
-    const exportExcel = () => {
-        const rowData = rows.map((row) => row.original)
-        const csv = generateCsv(csvConfig)(rowData)
-        download(csvConfig)(csv)
-    }
-
-    return (
-        <>
-            <Button className="bg-blue-600" onClick={exportExcel}>
-                <LucideDownload /> Download
-            </Button>
-        </>
     )
 }

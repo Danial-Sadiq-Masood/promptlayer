@@ -1,11 +1,9 @@
 import DataTable from "./DataTable/DataTable"
-import React, { useState } from 'react'
+import React from 'react'
 
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -24,7 +22,7 @@ const HomePage = () => {
         <div className="w-100 p-8">
             <Card>
                 <CardHeader className="pb-3 gap-3">
-                    <CardTitle className="text-2xl">Human Grading Tool</CardTitle>
+                    <CardTitle className="text-4xl">Human Grading Tool</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <DataTable />
